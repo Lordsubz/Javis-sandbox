@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JAVIS</title>
+<style>
+  :root{
+    --bg:#04070c;
+    --panel:#0a121c;
+    --cyan:#4ff3ff;
+    --cyan-dim:#1c5a66;
+    --amber:#ffb454;
+    --red:#ff5f5f;
+    --text:#d8f6ff;
+    --muted:#6f93a0;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0;padding:0;height:100%;
+    background:radial-gradient(ellipse at center, #071018 0%, #020304 75%);
+    color:var(--text);
+    font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+    overflow-x:hidden;
+  }
+  .scanlines{
+    position:fixed;inset:0;pointer-events:none;z-index:50;
+    background:repeating-linear-gradient(0deg, rgba(79,243,255,0.02) 0px, rgba(79,243,255,0.02) 1px, transparent 2px, transparent 4px);
+    mix-blend-mode:screen;
+  }
+  header{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:18px 32px;border-bottom:1px solid var(--cyan-dim);
+    letter-spacing:4px;
+  }
+  header h1{
+    margin:0;font-size:1.4rem;font-weight:600;color:var(--cyan);
+    text-shadow:0 0 12px rgba(79,243,255,.6);
+  }
+  header .status{font-size:.75rem;color:var(--muted);letter-spacing:2px;}
+  #core-wrap{
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    padding:48px 20px 24px;
+  }
+  #orb{
+    width:180px;height:180px;border-radius:50%;position:relative;
+    border:2px solid var(--cyan);
+    box-shadow:0 0 30px rgba(79,243,255,.35), inset 0 0 30px rgba(79,243,255,.15);
+    display:flex;align-items:center;justify-content:center;
+    transition:box-shadow .3s ease, border-color .3s ease;
+  }
+  #orb::before,#orb::after{
+    content:"";position:absolute;border-radius:50%;border:1px solid var(--cyan-dim);
+  }
+  #orb::before{inset:-18px;animation:spin 12s linear infinite;}
+  #orb::after{inset:-34px;border-style:dashed;animation:spin 20s linear infinite reverse;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  #orb-core{
+    width:60%;height:60%;border-radius:50%;
+    background:radial-gradient(circle, rgba(79,243,255,.9), rgba(79,243,255,.05));
+    animation:pulse 2.4s ease-in-out infinite;
+  }
+  @keyframes pulse{0%,100%{transform:scale(.9);opacity:.7;}50%{transform:scale(1.05);opacity:1;}}
+  body.listening #orb{border-color:var(--amber);box-shadow:0 0 40px rgba(255,180,84,.55), inset 0 0 30px rgba(255,180,84,.2);}
+  body.listening #orb-core{background:radial-gradient(circle, rgba(255,180,84,.9), rgba(255,180,84,.05));animation:pulse 1s ease-in-out infinite;}
+  body.speaking #orb{border-color:#7dffb0;box-shadow:0 0 46px rgba(125,255,176,.6), inset 0 0 30px rgba(125,255,176,.25);}
+  body.speaking #orb-core{background:radial-gradient(circle, rgba(125,255,176,.95), rgba(125,255,176,.05));animation:pulse .5s ease-in-out infinite;}
+  #cue{margin-top:22px;text-align:center;color:var(--muted);font-size:.95rem;letter-spacing:1px;max-width:420px;}
+  #cue b{color:var(--cyan);}
+  #transcript{margin-top:8px;min-height:1.2em;color:var(--amber);font-size:.85rem;letter-spacing:1px;}
+  #wake-btn{
+    margin-top:18px;background:transparent;border:1px solid var(--cyan-dim);color:var(--cyan);
+    padding:8px 18px;border-radius:20px;font-size:.75rem;letter-spacing:2px;cursor:pointer;
+    transition:all .2s ease;
+  }
+  #wake-btn:hover{border-color:var(--cyan);box-shadow:0 0 12px rgba(79,243,255,.4);}
+  #grid{
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+    gap:18px;padding:12px 32px 48px;max-width:1200px;margin:0 auto;
+    opacity:0;transform:translateY(16px);transition:opacity .6s ease, transform .6s ease;
+  }
+  #grid.revealed{opacity:1;transform:translateY(0);}
+  .panel{
+    background:linear-gradient(160deg, var(--panel), #050b11);
+    border:1px solid var(--cyan-dim);border-radius:10px;padding:18px 20px;
+    position:relative;overflow:hidden;
+  }
+  .panel::before{
+    content:"";position:absolute;top:0;left:0;right:0;height:2px;
+    background:linear-gradient(90deg, transparent, var(--cyan), transparent);
+    opacity:.7;
+  }
+  .panel h2{
+    margin:0 0 12px;font-size:.8rem;letter-spacing:3px;color:var(--cyan);
+    text-transform:uppercase;display:flex;align-items:center;gap:8px;
+  }
+  .panel h2 .dot{width:6px;height:6px;border-radius:50%;background:var(--cyan);box-shadow:0 0 6px var(--cyan);}
+  .big-stat{font-size:2rem;font-weight:700;color:var(--text);}
+  .sub-stat{color:var(--muted);font-size:.8rem;margin-top:4px;}
+  .item{border-top:1px solid rgba(79,243,255,.08);padding:10px 0;font-size:.85rem;}
+  .item:first-of-type{border-top:none;padding-top:0;}
+  .item .tag{
+    display:inline-block;font-size:.65rem;letter-spacing:1px;padding:2px 8px;border-radius:10px;
+    margin-bottom:4px;text-transform:uppercase;
+  }
+  .tag.high{background:rgba(255,95,95,.15);color:var(--red);border:1px solid rgba(255,95,95,.4);}
+  .tag.medium{background:rgba(255,180,84,.15);color:var(--amber);border:1px solid rgba(255,180,84,.4);}
+  .tag.low{background:rgba(79,243,255,.1);color:var(--cyan);border:1px solid rgba(79,243,255,.3);}
+  .item .title{color:var(--text);font-weight:600;margin:2px 0;}
+  .item .meta{color:var(--muted);font-size:.75rem;}
+  .foot-note{margin-top:14px;color:var(--muted);font-size:.7rem;line-height:1.5;border-top:1px dashed var(--cyan-dim);padding-top:10px;}
+  footer{text-align:center;color:var(--muted);font-size:.7rem;letter-spacing:2px;padding-bottom:30px;}
+  #mic-error{color:var(--red);font-size:.75rem;margin-top:10px;display:none;text-align:center;max-width:420px;}
+</style>
+</head>
+<body>
+<div class="scanlines"></div>
+<header>
+  <h1>J . A . V . I . S</h1>
+  <div class="status" id="status-line">STANDBY</div>
+</header>
+
+<div id="core-wrap">
+  <div id="orb"><div id="orb-core"></div></div>
+  <div id="cue">Clap twice, then say <b>&ldquo;Wake up, Daddy is home&rdquo;</b> to activate.</div>
+  <div id="transcript"></div>
+  <button id="wake-btn">ENABLE MICROPHONE</button>
+  <div id="mic-error"></div>
+</div>
+
+<div id="grid"></div>
+<footer>JAVIS DASHBOARD &middot; DATA REFRESHED FROM data/briefing.json</footer>
+
+<script>
+// Fallback copy of data/briefing.json for when the page is opened via file://
+// (local fetch() is blocked by CORS in that mode). Keep in sync with data/briefing.json.
+window.__EMBEDDED_BRIEFING__ = {
+  "generatedAt": "2026-08-31T13:15:00Z",
+  "ownerEmail": "subilosichembe180@gmail.com",
+  "forex": {
+    "pair": "USD/ZMW",
+    "rate": 18.89,
+    "previousClose": 18.82,
+    "dayRange": { "low": 18.80, "high": 18.89 },
+    "asOf": "2026-08-31",
+    "source": "Market aggregator data (Investing.com / Wise) — Bank of Zambia's own site (boz.zm) is JavaScript-rendered and could not be scraped directly for the official indicative rate.",
+    "sourceUrl": "https://www.boz.zm/average-exchange-rates.htm",
+    "note": "Check boz.zm directly for the Bank of Zambia's officially published mid-rate."
+  },
+  "email": {
+    "windowLabel": "since Monday (this week so far)",
+    "totalThreads": 201,
+    "unreadCount": 22,
+    "needsAttention": [
+      {
+        "subject": "ICT Association of Zambia and Tayant Pay Engagement Meeting",
+        "from": "support@ictaz.org.zm",
+        "reason": "Unrecognized sender, meeting was for Sun Aug 30 11:00-12:00 (already passed) and was never added to your calendar. A reply to their support address bounced back as undeliverable.",
+        "priority": "high"
+      },
+      {
+        "subject": "OTP Alert (x2)",
+        "from": "internetbanking@fmbch.com",
+        "reason": "Wallet transfer one-time-passcodes on Aug 30 and Aug 31 — confirm both were initiated by you.",
+        "priority": "medium"
+      },
+      {
+        "subject": "Security alert: Claude access to Gmail / Drive / Calendar",
+        "from": "no-reply@accounts.google.com",
+        "reason": "Expected — generated by setting up this assistant. No action needed unless unrecognized.",
+        "priority": "low"
+      }
+    ],
+    "lowPriorityCategories": ["LinkedIn notifications", "Newsletters (YouVersion, Simplilearn, Domestika, BongoHive Hive, Namecheap, Premier League)", "Promotions"]
+  },
+  "calendar": {
+    "calendarId": "subilosichembe180@gmail.com",
+    "timeZone": "Africa/Maputo",
+    "upcoming": [
+      { "summary": "Britney's birthday", "start": "2026-09-04T10:00:00+02:00", "allDay": false },
+      { "summary": "Lawson's birthday", "start": "2026-10-08", "allDay": true },
+      { "summary": "Tayant Pay's birthday", "start": "2026-10-20", "allDay": true },
+      { "summary": "Karen's birthday", "start": "2026-11-06", "allDay": true }
+    ],
+    "note": "No business meetings or appointments currently on the calendar."
+  },
+  "tayantPay": {
+    "sourceFile": "pheonix Tayant transaction records",
+    "sourceFileUrl": "https://docs.google.com/spreadsheets/d/1Uo19c6aqz1Ntb1RqragtEmLX-6JwHzZUMxyFRTaz_RU/edit",
+    "tab": "August",
+    "period": "2026-08-03 to 2026-08-31",
+    "approxTransactionCount": "95-100",
+    "zambiaLeg": { "currency": "ZMW", "revenue": 1114.56, "fees": 237.90, "profit": 876.66 },
+    "russiaLeg": { "currency": "ZMW-equivalent", "revenue": 12200.34, "fees": 0, "profit": 12200.34 },
+    "closingBalanceZMW": 110626.56,
+    "note": "Manually-maintained ledger; transaction count is an estimate from raw row counts, not a formula in the sheet."
+  }
+};
+
+const state = { claps: [], armed: false, recognizing: false, data: null };
+
+async function loadBriefing(){
+  try{
+    const res = await fetch('data/briefing.json', {cache:'no-store'});
+    state.data = await res.json();
+  }catch(e){
+    // file:// pages can't fetch local JSON — fall back to the embedded copy.
+    state.data = window.__EMBEDDED_BRIEFING__;
+  }
+  renderDashboard(state.data);
+}
+
+function fmtDate(iso, allDay){
+  const d = new Date(iso);
+  return d.toLocaleDateString(undefined, allDay
+    ? {weekday:'short', month:'short', day:'numeric', year:'numeric'}
+    : {weekday:'short', month:'short', day:'numeric', hour:'numeric', minute:'2-digit'});
+}
+
+function renderDashboard(d){
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+
+  // Forex panel
+  grid.appendChild(panel(`
+    <h2><span class="dot"></span>${d.forex.pair} &middot; Bank of Zambia reference</h2>
+    <div class="big-stat">K${d.forex.rate.toFixed(2)}</div>
+    <div class="sub-stat">Prev close K${d.forex.previousClose.toFixed(2)} &middot; Range K${d.forex.dayRange.low.toFixed(2)}&ndash;K${d.forex.dayRange.high.toFixed(2)} &middot; ${d.forex.asOf}</div>
+    <div class="foot-note">${d.forex.source} <a href="${d.forex.sourceUrl}" target="_blank" style="color:var(--cyan)">boz.zm &#8599;</a></div>
+  `));
+
+  // Email panel
+  const emailItems = d.email.needsAttention.map(e => `
+    <div class="item">
+      <span class="tag ${e.priority}">${e.priority}</span>
+      <div class="title">${e.subject}</div>
+      <div class="meta">${e.from} &mdash; ${e.reason}</div>
+    </div>
+  `).join('');
+  grid.appendChild(panel(`
+    <h2><span class="dot"></span>Inbox ${d.email.windowLabel}</h2>
+    <div class="big-stat">${d.email.totalThreads}</div>
+    <div class="sub-stat">threads &middot; ${d.email.unreadCount} unread &middot; ${d.email.needsAttention.length} need your attention</div>
+    ${emailItems}
+    <div class="foot-note">Everything else: ${d.email.lowPriorityCategories.join(', ')}.</div>
+  `));
+
+  // Calendar panel
+  const calItems = d.calendar.upcoming.map(ev => `
+    <div class="item">
+      <div class="title">${ev.summary}</div>
+      <div class="meta">${fmtDate(ev.start, ev.allDay)}</div>
+    </div>
+  `).join('');
+  grid.appendChild(panel(`
+    <h2><span class="dot"></span>Upcoming &middot; ${d.calendar.timeZone}</h2>
+    ${calItems}
+    <div class="foot-note">${d.calendar.note}</div>
+  `));
+
+  // Tayant Pay panel
+  const t = d.tayantPay;
+  grid.appendChild(panel(`
+    <h2><span class="dot"></span>Tayant Pay &middot; ${t.tab} ledger</h2>
+    <div class="big-stat">~${t.approxTransactionCount}</div>
+    <div class="sub-stat">transactions logged &middot; ${t.period}</div>
+    <div class="item">
+      <div class="title">Zambia (Kwacha) leg</div>
+      <div class="meta">Revenue K${t.zambiaLeg.revenue.toLocaleString()} &middot; Fees K${t.zambiaLeg.fees.toLocaleString()} &middot; Profit K${t.zambiaLeg.profit.toLocaleString()}</div>
+    </div>
+    <div class="item">
+      <div class="title">Russia leg</div>
+      <div class="meta">Revenue K${t.russiaLeg.revenue.toLocaleString()} &middot; Profit K${t.russiaLeg.profit.toLocaleString()}</div>
+    </div>
+    <div class="foot-note">Closing balance K${t.closingBalanceZMW.toLocaleString()}. ${t.note} <a href="${t.sourceFileUrl}" target="_blank" style="color:var(--cyan)">Open sheet &#8599;</a></div>
+  `));
+
+  document.getElementById('status-line').textContent = 'BRIEFING READY';
+  requestAnimationFrame(()=>grid.classList.add('revealed'));
+}
+
+function panel(html){
+  const el = document.createElement('div');
+  el.className = 'panel';
+  el.innerHTML = html;
+  return el;
+}
+
+function buildSpokenBriefing(d){
+  const attn = d.email.needsAttention.map(e => `${e.subject}, from ${e.from}: ${e.reason}`).join('. ');
+  const cal = d.calendar.upcoming.map(ev => `${ev.summary} on ${fmtDate(ev.start, ev.allDay)}`).join(', ');
+  return `Good day. The Kwacha is trading at ${d.forex.rate} per US dollar, up from a previous close of ${d.forex.previousClose}. `
+    + `You have ${d.email.totalThreads} email threads ${d.email.windowLabel}, with ${d.email.needsAttention.length} needing your attention: ${attn}. `
+    + `Your next upcoming events are: ${cal}. `
+    + `On Tayant Pay: the August ledger logs roughly ${d.tayantPay.approxTransactionCount} transactions, with a Zambia leg profit of ${d.tayantPay.zambiaLeg.profit} kwacha, closing the month at a balance of ${d.tayantPay.closingBalanceZMW} kwacha.`;
+}
+
+function speak(text){
+  if(!('speechSynthesis' in window)){ return; }
+  document.body.classList.add('speaking');
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.rate = 0.98;
+  utter.pitch = 0.9;
+  utter.onend = () => document.body.classList.remove('speaking');
+  speechSynthesis.cancel();
+  speechSynthesis.speak(utter);
+}
+
+// --- Wake trigger: two claps, then the wake phrase ---
+async function armListening(){
+  const errBox = document.getElementById('mic-error');
+  try{
+    const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const src = ctx.createMediaStreamSource(stream);
+    const analyser = ctx.createAnalyser();
+    analyser.fftSize = 512;
+    src.connect(analyser);
+    const data = new Uint8Array(analyser.frequencyBinCount);
+
+    state.armed = true;
+    document.getElementById('status-line').textContent = 'LISTENING FOR CLAPS';
+    document.body.classList.add('listening');
+
+    function tick(){
+      analyser.getByteFrequencyData(data);
+      const volume = data.reduce((a,b)=>a+b,0) / data.length;
+      const now = Date.now();
+      if(volume > 55){ // clap-level transient
+        state.claps = state.claps.filter(t => now - t < 1500);
+        state.claps.push(now);
+        if(state.claps.length >= 2){
+          state.claps = [];
+          onDoubleClap();
+        }
+      }
+      requestAnimationFrame(tick);
+    }
+    tick();
+  }catch(e){
+    errBox.style.display = 'block';
+    errBox.textContent = 'Microphone access denied or unavailable — use the button below to trigger the briefing manually instead.';
+  }
+}
+
+function onDoubleClap(){
+  document.getElementById('status-line').textContent = 'CLAPS DETECTED — SAY THE WAKE PHRASE';
+  startSpeechRecognition();
+}
+
+function startSpeechRecognition(){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SR){
+    document.getElementById('mic-error').style.display = 'block';
+    document.getElementById('mic-error').textContent = 'Speech recognition is not supported in this browser — use the button below instead.';
+    return;
+  }
+  if(state.recognizing) return;
+  state.recognizing = true;
+  const rec = new SR();
+  rec.lang = 'en-US';
+  rec.interimResults = true;
+  rec.maxAlternatives = 3;
+  rec.onresult = (event) => {
+    const transcript = Array.from(event.results).map(r => r[0].transcript).join(' ').toLowerCase();
+    document.getElementById('transcript').textContent = transcript;
+    if(transcript.includes('wake up') && transcript.includes('daddy')){
+      rec.stop();
+      activate();
+    }
+  };
+  rec.onend = () => { state.recognizing = false; };
+  rec.start();
+}
+
+function activate(){
+  document.getElementById('status-line').textContent = 'ACTIVE';
+  document.getElementById('cue').textContent = 'Welcome home. Here is your briefing.';
+  document.getElementById('transcript').textContent = '';
+  if(state.data){ speak(buildSpokenBriefing(state.data)); }
+}
+
+document.getElementById('wake-btn').addEventListener('click', () => {
+  if(!state.armed){ armListening(); }
+  else { activate(); }
+});
+
+loadBriefing();
+</script>
+</body>
+</html>
