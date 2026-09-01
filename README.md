@@ -41,17 +41,20 @@ and dropped in place. The current file was populated from a real pull on
 
 - **Real, as of generation time:** the forex rate, email summary, calendar
   events, and Tayant Pay ledger totals in `data/briefing.json` all came from
-  live Gmail, Google Calendar, and Google Drive lookups, plus a web search
-  for the USD/ZMW rate (Bank of Zambia's own site is JS-rendered and
-  couldn't be scraped directly — see the `forex.source` field).
+  live Gmail, Google Calendar, and Google Drive lookups, plus three market
+  data providers for the USD/ZMW rate (Bank of Zambia's own site is
+  JS-rendered and couldn't be scraped directly — see the `forex.source`
+  field). Last refreshed 2026-09-01.
 - **Client-side, browser-only:** the clap detector (Web Audio API amplitude
   spikes) and the wake-phrase listener (`webkitSpeechRecognition`) run
   entirely in the browser. Voice **output** uses the browser's built-in
   `speechSynthesis` API so the page works offline with no API key. A
-  higher-quality ElevenLabs narration of this same briefing was generated
-  separately and sent alongside this dashboard — wiring a real TTS API key
-  into the page itself was left out on purpose so nothing here silently
-  spends the user's API credits.
+  higher-quality ElevenLabs narration of this same briefing is generated
+  separately and sent alongside this dashboard when the account's ElevenLabs
+  quota allows it — the 2026-09-01 refresh hit that plan's daily generation
+  limit, so only the built-in browser voice is available for this refresh.
+  Wiring a real TTS API key into the page itself was left out on purpose so
+  nothing here silently spends the user's API credits.
 - **Not implemented:** an actual scheduler that refreshes `briefing.json`
   automatically. Wire that up with a cron job or a scheduled Claude Code
   session that re-runs the same four lookups and overwrites the file.
