@@ -35,7 +35,7 @@ from client-side JavaScript. Instead, `briefing.json` is meant to be
 regenerated periodically by a backend job (e.g. a scheduled Claude session,
 or a small script using the Gmail/Calendar/Drive APIs and a forex source)
 and dropped in place. The current file was populated from a real pull on
-2026-08-31.
+2026-09-05 (previously refreshed 2026-08-31).
 
 ## What's simulated vs. real right now
 
@@ -51,7 +51,10 @@ and dropped in place. The current file was populated from a real pull on
   higher-quality ElevenLabs narration of this same briefing was generated
   separately and sent alongside this dashboard — wiring a real TTS API key
   into the page itself was left out on purpose so nothing here silently
-  spends the user's API credits.
+  spends the user's API credits. `audio/briefing-2026-09-05.mp3` is the
+  latest one (Hayes M — Calm British AI Customer Care voice), kept short
+  because the workspace only had ~167 ElevenLabs credits left at generation
+  time.
 - **Not implemented:** an actual scheduler that refreshes `briefing.json`
   automatically. Wire that up with a cron job or a scheduled Claude Code
   session that re-runs the same four lookups and overwrites the file.
