@@ -35,7 +35,7 @@ from client-side JavaScript. Instead, `briefing.json` is meant to be
 regenerated periodically by a backend job (e.g. a scheduled Claude session,
 or a small script using the Gmail/Calendar/Drive APIs and a forex source)
 and dropped in place. The current file was populated from a real pull on
-2026-08-31.
+2026-09-10 (previous refresh: 2026-08-31).
 
 ## What's simulated vs. real right now
 
@@ -48,10 +48,12 @@ and dropped in place. The current file was populated from a real pull on
   spikes) and the wake-phrase listener (`webkitSpeechRecognition`) run
   entirely in the browser. Voice **output** uses the browser's built-in
   `speechSynthesis` API so the page works offline with no API key. A
-  higher-quality ElevenLabs narration of this same briefing was generated
-  separately and sent alongside this dashboard — wiring a real TTS API key
-  into the page itself was left out on purpose so nothing here silently
-  spends the user's API credits.
+  higher-quality ElevenLabs narration is generated separately per refresh
+  when credits allow — wiring a real TTS API key into the page itself was
+  left out on purpose so nothing here silently spends the user's API
+  credits. On the 2026-09-10 refresh, ElevenLabs narration generation
+  failed (account down to 9 credits, 2,521 required) — the dashboard still
+  reads the briefing aloud fine via the browser's built-in voice.
 - **Not implemented:** an actual scheduler that refreshes `briefing.json`
   automatically. Wire that up with a cron job or a scheduled Claude Code
   session that re-runs the same four lookups and overwrites the file.
