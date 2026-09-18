@@ -55,3 +55,17 @@ and dropped in place. The current file was populated from a real pull on
 - **Not implemented:** an actual scheduler that refreshes `briefing.json`
   automatically. Wire that up with a cron job or a scheduled Claude Code
   session that re-runs the same four lookups and overwrites the file.
+
+## Refresh log
+
+- **2026-09-18:** Re-ran all four live lookups and updated `briefing.json`
+  (and the embedded fallback in `index.html`) with fresh numbers: USD/ZMW
+  now averages K19.68 (up ~4% from the Aug 31 snapshot), 4 new items flagged
+  in the inbox (two regulatory deadlines from BOZ and ZRA, a same-day ZRA
+  Smart Invoice notice, and 4 same-day Tayant Exchange login alerts worth
+  confirming), calendar still has no meetings booked, and the August Tayant
+  Pay ledger tab was recounted directly from the sheet at 97 transaction
+  rows. An ElevenLabs narration of this update could not be generated this
+  run — the workspace's TTS credit balance was exhausted (9 credits left,
+  1801 needed) — so the browser's built-in `speechSynthesis` narration in
+  the dashboard is the only audio output for this refresh.
