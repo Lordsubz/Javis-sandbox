@@ -41,9 +41,11 @@ and dropped in place. The current file was populated from a real pull on
 
 - **Real, as of generation time:** the forex rate, email summary, calendar
   events, and Tayant Pay ledger totals in `data/briefing.json` all came from
-  live Gmail, Google Calendar, and Google Drive lookups, plus a web search
+  live Gmail, Google Calendar, and Google Drive lookups, plus a web fetch
   for the USD/ZMW rate (Bank of Zambia's own site is JS-rendered and
-  couldn't be scraped directly — see the `forex.source` field).
+  couldn't be scraped directly — see the `forex.source` field). This file
+  is refreshed periodically by a scheduled Claude session re-running the
+  same four lookups (most recently 2026-09-19).
 - **Client-side, browser-only:** the clap detector (Web Audio API amplitude
   spikes) and the wake-phrase listener (`webkitSpeechRecognition`) run
   entirely in the browser. Voice **output** uses the browser's built-in
@@ -55,3 +57,10 @@ and dropped in place. The current file was populated from a real pull on
 - **Not implemented:** an actual scheduler that refreshes `briefing.json`
   automatically. Wire that up with a cron job or a scheduled Claude Code
   session that re-runs the same four lookups and overwrites the file.
+- **Audio narration:** a higher-quality ElevenLabs narration of the
+  briefing is normally generated alongside each refresh and sent to the
+  user separately. As of the 2026-09-19 refresh the workspace's ElevenLabs
+  credits were exhausted (9 credits remaining, ~2630 needed), so no
+  narration was produced that cycle — see `data/briefing.json`'s `audio`
+  field. The in-page browser `speechSynthesis` voice-out is unaffected and
+  needs no credits.
