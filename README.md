@@ -34,8 +34,8 @@ those all require authenticated, server-side API calls that can't safely run
 from client-side JavaScript. Instead, `briefing.json` is meant to be
 regenerated periodically by a backend job (e.g. a scheduled Claude session,
 or a small script using the Gmail/Calendar/Drive APIs and a forex source)
-and dropped in place. The current file was populated from a real pull on
-2026-08-31.
+and dropped in place. The current file was refreshed from a real pull on
+2026-09-23 (previous pull: 2026-08-31).
 
 ## What's simulated vs. real right now
 
@@ -43,15 +43,20 @@ and dropped in place. The current file was populated from a real pull on
   events, and Tayant Pay ledger totals in `data/briefing.json` all came from
   live Gmail, Google Calendar, and Google Drive lookups, plus a web search
   for the USD/ZMW rate (Bank of Zambia's own site is JS-rendered and
-  couldn't be scraped directly — see the `forex.source` field).
+  couldn't be scraped directly — see the `forex.source` field). The August
+  Tayant Pay ledger was re-tallied directly from the raw row data in the
+  "pheonix Tayant transaction records" sheet (99 transaction rows, Aug 3-31).
 - **Client-side, browser-only:** the clap detector (Web Audio API amplitude
   spikes) and the wake-phrase listener (`webkitSpeechRecognition`) run
   entirely in the browser. Voice **output** uses the browser's built-in
   `speechSynthesis` API so the page works offline with no API key. A
-  higher-quality ElevenLabs narration of this same briefing was generated
-  separately and sent alongside this dashboard — wiring a real TTS API key
-  into the page itself was left out on purpose so nothing here silently
-  spends the user's API credits.
+  higher-quality ElevenLabs narration was attempted for this refresh but
+  the workspace's ElevenLabs credits were exhausted (9 credits left, 2050
+  needed), so no external audio file was generated this round — the
+  dashboard's built-in browser speech synthesis is the only voice output
+  right now. Retry the ElevenLabs narration once credits are topped up;
+  wiring a TTS API key into the page itself remains left out on purpose so
+  nothing here silently spends the user's API credits.
 - **Not implemented:** an actual scheduler that refreshes `briefing.json`
   automatically. Wire that up with a cron job or a scheduled Claude Code
   session that re-runs the same four lookups and overwrites the file.
