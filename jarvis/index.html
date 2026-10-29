@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>J.A.R.V.I.S. Dashboard</title>
+<style>
+  :root { --bg:#02070d; --cyan:#27e8ff; --dim:#0e5c68; --panel:rgba(8,40,52,.55); --warn:#ffb347; --txt:#c9f6ff; }
+  * { box-sizing:border-box; }
+  body { margin:0; min-height:100vh; background:radial-gradient(circle at 50% 30%, #07202b, var(--bg) 70%); color:var(--txt);
+         font-family:"Segoe UI", system-ui, sans-serif; overflow-x:hidden; }
+  header { text-align:center; padding:28px 16px 8px; }
+  h1 { margin:0; letter-spacing:.5em; font-weight:200; color:var(--cyan); text-shadow:0 0 18px var(--cyan); font-size:clamp(20px,5vw,34px); }
+  #status { margin-top:8px; font-size:13px; letter-spacing:.2em; color:var(--dim); text-transform:uppercase; }
+  #reactor { width:150px; height:150px; margin:18px auto; border-radius:50%; border:2px solid var(--cyan);
+             box-shadow:0 0 30px var(--cyan), inset 0 0 30px var(--cyan); position:relative; animation:spin 12s linear infinite; }
+  #reactor::before, #reactor::after { content:""; position:absolute; inset:18px; border-radius:50%; border:2px dashed var(--cyan); }
+  #reactor::after { inset:48px; border-style:solid; background:radial-gradient(circle,#bff9ff,var(--cyan) 60%,transparent 70%); }
+  body.awake #reactor { animation-duration:3s; box-shadow:0 0 60px var(--cyan), inset 0 0 40px var(--cyan); }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .controls { text-align:center; margin-bottom:14px; }
+  button { background:transparent; color:var(--cyan); border:1px solid var(--cyan); padding:9px 18px; margin:4px; letter-spacing:.15em;
+           cursor:pointer; text-transform:uppercase; font-size:12px; }
+  button:hover { background:rgba(39,232,255,.15); }
+  #grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:16px; padding:16px; max-width:1200px; margin:0 auto; }
+  .card { background:var(--panel); border:1px solid var(--dim); padding:16px 18px; opacity:.25; transform:translateY(12px);
+          transition:all .8s ease; backdrop-filter:blur(4px); }
+  body.awake .card { opacity:1; transform:none; }
+  body.awake .card:nth-child(2){transition-delay:.3s} body.awake .card:nth-child(3){transition-delay:.6s} body.awake .card:nth-child(4){transition-delay:.9s}
+  .card h2 { margin:0 0 10px; font-size:12px; letter-spacing:.3em; color:var(--cyan); font-weight:400; text-transform:uppercase; }
+  .big { font-size:38px; font-weight:200; color:#fff; text-shadow:0 0 12px var(--cyan); }
+  .row { display:flex; justify-content:space-between; font-size:14px; padding:3px 0; border-bottom:1px dotted var(--dim); }
+  .note { font-size:12px; color:#7fbac6; margin-top:10px; line-height:1.5; }
+  .alert { color:var(--warn); }
+  #transcript { text-align:center; font-size:13px; color:#7fbac6; min-height:20px; padding:0 16px 24px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>J.A.R.V.I.S.</h1>
+  <div id="status">Standby — clap twice, then say “Wake up, Daddy is home”</div>
+</header>
+<div id="reactor"></div>
+<div class="controls">
+  <button id="arm">Arm microphone</button>
+  <button id="manual">Run briefing now</button>
+  <button id="mute">Stop voice</button>
+</div>
+
+<main id="grid">
+  <section class="card">
+    <h2>USD / ZMW — Bank of Zambia</h2>
+    <div class="big" id="midrate">—</div>
+    <div class="row"><span>Buy</span><b id="buy">—</b></div>
+    <div class="row"><span>Sell</span><b id="sell">—</b></div>
+    <div class="row"><span>Rate date</span><b id="rdate">—</b></div>
+    <div class="row"><span>Change since 24 Aug</span><b id="chg">—</b></div>
+    <div class="note" id="ratenote"></div>
+  </section>
+  <section class="card">
+    <h2>Email — this week</h2>
+    <div id="mail"></div>
+  </section>
+  <section class="card">
+    <h2>Calendar</h2>
+    <div id="cal"></div>
+  </section>
+  <section class="card">
+    <h2>Tayant Pay — August tab</h2>
+    <div class="big" id="txcount">—</div>
+    <div class="row"><span>Money in (Zambia ledger)</span><b id="txin">—</b></div>
+    <div class="row"><span>Money out (Zambia ledger)</span><b id="txout">—</b></div>
+    <div class="row"><span>Kwacha volume</span><b id="txvol">—</b></div>
+    <div class="note" id="txnote"></div>
+  </section>
+</main>
+<div id="transcript"></div>
+
+<script>
+// ---- Data snapshot: refreshed by the scheduled run (2026-10-29) --------------------------------
+const DATA = {
+  generated: "2026-10-29",
+  fx: { buy: 20.1879, mid: 20.2129, sell: 20.2379, date: "2026-10-29", prevMid: 19.0129, prevDate: "2026-08-24",
+        source: "Bank of Zambia published table (read via the allratestoday.com mirror — boz.zm renders client-side)" },
+  mail: { available: false, reason: "Gmail needs to be re-authorised, so this week's emails could not be read." },
+  calendar: { events: [] },
+  tayant: { count: 298, moneyIn: 89, moneyOut: 209, volume: 610499,
+            note: "Counted from the sheet's “August” tab: customer transactions only (director loans, capital, refunds, balance-forwards excluded). The tab runs past August into October." }
+};
+
+// ---- Briefing text -------------------------------------------------------------------------------
+function briefing() {
+  const f = DATA.fx, pct = ((f.mid - f.prevMid) / f.prevMid * 100).toFixed(1);
+  const parts = ["Welcome home, sir. Systems online."];
+  parts.push(`The Bank of Zambia average rate for the dollar is ${f.mid.toFixed(2)} kwacha. Buying at ${f.buy.toFixed(2)}, selling at ${f.sell.toFixed(2)}. That is ${pct} percent weaker for the kwacha than in late August.`);
+  parts.push(DATA.mail.available ? "Email summary follows." : "I could not read your email today. Gmail needs to be signed in again.");
+  parts.push(DATA.calendar.events.length
+    ? `You have ${DATA.calendar.events.length} upcoming events. ` + DATA.calendar.events.map(e => `${e.title} at ${e.when}`).join(". ")
+    : "Your calendar is clear. No upcoming events or appointments in the next seven days.");
+  const t = DATA.tayant;
+  parts.push(`On the Tayant Pay August tab, ${t.count} transactions have been processed: ${t.moneyIn} money in and ${t.moneyOut} money out, about ${Math.round(t.volume / 1000)} thousand kwacha in volume.`);
+  parts.push("That concludes the briefing.");
+  return parts.join(" ");
+}
+
+// ---- Render --------------------------------------------------------------------------------------
+const $ = id => document.getElementById(id);
+function render() {
+  const f = DATA.fx;
+  $("midrate").textContent = "K " + f.mid.toFixed(4);
+  $("buy").textContent = f.buy.toFixed(4); $("sell").textContent = f.sell.toFixed(4); $("rdate").textContent = f.date;
+  $("chg").textContent = ((f.mid - f.prevMid) / f.prevMid * 100).toFixed(1) + "% (kwacha weaker)";
+  $("ratenote").textContent = f.source;
+  $("mail").innerHTML = DATA.mail.available ? "" : `<div class="alert">⚠ ${DATA.mail.reason}</div>
+    <div class="note">Reconnect Gmail in your claude.ai connector settings and the next run will summarise this week's mail and flag what needs attention.</div>`;
+  $("cal").innerHTML = DATA.calendar.events.length
+    ? DATA.calendar.events.map(e => `<div class="row"><span>${e.title}</span><b>${e.when}</b></div>`).join("")
+    : `<div class="big" style="font-size:22px">All clear</div><div class="note">No upcoming events or appointments in the next 7 days.</div>`;
+  const t = DATA.tayant;
+  $("txcount").textContent = t.count + " transactions";
+  $("txin").textContent = t.moneyIn; $("txout").textContent = t.moneyOut;
+  $("txvol").textContent = "K " + t.volume.toLocaleString(); $("txnote").textContent = t.note;
+}
+
+// ---- Voice output --------------------------------------------------------------------------------
+function speak(text) {
+  if (!("speechSynthesis" in window)) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  const v = speechSynthesis.getVoices().find(v => /en-GB/i.test(v.lang) && /male|daniel|george/i.test(v.name)) ||
+            speechSynthesis.getVoices().find(v => /en-GB/i.test(v.lang));
+  if (v) u.voice = v;
+  u.rate = 0.95; u.pitch = 0.85;
+  speechSynthesis.speak(u);
+}
+function wake() {
+  document.body.classList.add("awake");
+  $("status").textContent = "Online — briefing in progress";
+  speak(briefing());
+}
+$("manual").onclick = wake;
+$("mute").onclick = () => speechSynthesis.cancel();
+
+// ---- Wake sequence: double clap, then the phrase ------------------------------------------------
+const PHRASE = /wake\s*up.*(daddy|daddy's|dad).*home/i;
+let stage = "idle", claps = [];
+
+function listenForPhrase() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { $("transcript").textContent = "Speech recognition unsupported in this browser (use Chrome). Use “Run briefing now”."; return; }
+  const rec = new SR(); rec.lang = "en-US"; rec.continuous = true; rec.interimResults = true;
+  const timeout = setTimeout(() => { rec.stop(); stage = "armed"; $("status").textContent = "Standby — clap twice again"; }, 15000);
+  rec.onresult = e => {
+    const text = Array.from(e.results).map(r => r[0].transcript).join(" ");
+    $("transcript").textContent = "“" + text + "”";
+    if (PHRASE.test(text)) { clearTimeout(timeout); rec.stop(); stage = "done"; wake(); }
+  };
+  rec.start();
+  $("status").textContent = "Clap detected — say the phrase…";
+}
+
+async function arm() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false } });
+    const ctx = new AudioContext(), src = ctx.createMediaStreamSource(stream), an = ctx.createAnalyser();
+    an.fftSize = 1024; src.connect(an);
+    const buf = new Uint8Array(an.fftSize); let hot = false;
+    stage = "armed"; $("status").textContent = "Armed — clap twice";
+    (function loop() {
+      an.getByteTimeDomainData(buf);
+      let peak = 0; for (const b of buf) peak = Math.max(peak, Math.abs(b - 128));
+      const now = performance.now();
+      if (peak > 90 && !hot && stage === "armed") {          // sharp transient = clap
+        hot = true; claps = claps.filter(t => now - t < 1000); claps.push(now);
+        if (claps.length >= 2 && now - claps[claps.length - 2] > 150) { claps = []; stage = "listening"; listenForPhrase(); }
+      }
+      if (peak < 40) hot = false;
+      requestAnimationFrame(loop);
+    })();
+  } catch (e) { $("status").textContent = "Microphone blocked — allow access, or use “Run briefing now”"; }
+}
+$("arm").onclick = arm;
+speechSynthesis && (speechSynthesis.onvoiceschanged = () => {});
+render();
+</script>
+</body>
+</html>
