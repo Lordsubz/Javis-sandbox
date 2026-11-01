@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>J.A.R.V.I.S.</title>
+<style>
+:root{--c:#00e5ff;--bg:#02070d}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 50% 30%,#06202e,var(--bg));color:var(--c);font-family:ui-monospace,Menlo,monospace;min-height:100vh;padding:16px}
+h1{letter-spacing:.4em;text-align:center;font-weight:300}
+.orb{width:120px;height:120px;border-radius:50%;margin:12px auto;border:2px solid var(--c);box-shadow:0 0 30px var(--c),inset 0 0 30px var(--c);opacity:.35;transition:.3s}
+.orb.on{opacity:1;animation:p 1.2s infinite}@keyframes p{50%{transform:scale(1.12)}}
+#status{text-align:center;margin-bottom:16px;color:#7fdfff}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;max-width:1000px;margin:auto}
+.card{border:1px solid #0a5a6e;border-radius:8px;padding:14px;background:#04141d99}
+.card h2{margin:0 0 8px;font-size:.8rem;letter-spacing:.2em;color:#fff}
+.big{font-size:1.8rem}.warn{color:#ffb74d}
+button{display:block;margin:16px auto;background:none;border:1px solid var(--c);color:var(--c);padding:10px 18px;border-radius:6px;font:inherit;cursor:pointer}
+</style></head><body>
+<h1>J.A.R.V.I.S.</h1><div class="orb" id="orb"></div>
+<div id="status">Standing by. Clap twice, then say “wake up, Daddy is home”.</div>
+<div class="grid">
+ <div class="card"><h2>USD / ZMW</h2><div class="big" id="fx">…</div><div id="fxn">Live market mid-rate. Bank of Zambia’s page is JS-rendered; verify at boz.zm.</div></div>
+ <div class="card"><h2>EMAIL</h2><div class="warn">Gmail needs re-authorisation.</div></div>
+ <div class="card"><h2>CALENDAR</h2>Fri 6 Nov – Karen’s birthday<br>No appointments.</div>
+ <div class="card"><h2>TAYANT PAY · AUGUST</h2><div class="big">~519</div>Zambia ledger ~316 · Russia ledger ~203</div>
+</div>
+<button id="go">Arm microphone</button><button id="play">Play briefing</button>
+<audio id="a" src="briefing.mp3"></audio>
+<script>
+const $=id=>document.getElementById(id);let claps=[],armed=false,heard=false;
+async function fx(){try{const r=await fetch('https://open.er-api.com/v6/latest/USD');const j=await r.json();$('fx').textContent='1 USD = '+j.rates.ZMW.toFixed(2)+' ZMW'}catch(e){$('fx').textContent='unavailable'}}
+function wake(){$('orb').classList.add('on');$('status').textContent='Welcome home, sir.';fx();$('a').play().catch(()=>{});$('a').onended=()=>$('orb').classList.remove('on')}
+$('play').onclick=wake;
+$('go').onclick=async()=>{
+ const s=await navigator.mediaDevices.getUserMedia({audio:true});
+ const ctx=new AudioContext(),an=ctx.createAnalyser();ctx.createMediaStreamSource(s).connect(an);const d=new Uint8Array(an.fftSize);
+ let last=0;(function loop(){an.getByteTimeDomainData(d);let m=0;for(const v of d)m=Math.max(m,Math.abs(v-128));
+  const t=performance.now();if(m>100&&t-last>150){last=t;claps=claps.filter(x=>t-x<1200);claps.push(t);if(claps.length>=2){armed=true;claps=[];$('status').textContent='Listening for the phrase…';setTimeout(()=>armed=false,8000)}}
+  requestAnimationFrame(loop)})();
+ const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){$('status').textContent='Speech recognition unsupported; use Chrome.';return}
+ const r=new SR();r.continuous=true;r.lang='en-US';r.onresult=e=>{const x=[...e.results].slice(e.resultIndex).map(q=>q[0].transcript.toLowerCase()).join(' ');if(armed&&/wake up.*(daddy|daddy's|dad).*home/.test(x)){armed=false;wake()}};r.onend=()=>r.start();r.start();
+ $('status').textContent='Armed. Clap twice…';
+};
+fx();
+</script></body></html>
