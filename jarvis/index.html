@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>J.A.R.V.I.S. Dashboard</title>
+<style>
+:root{--c:#00e5ff;--bg:#02060d;--p:rgba(0,229,255,.07)}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(circle at 50% 30%,#06223a,var(--bg) 70%);color:var(--c);font-family:"Courier New",monospace;min-height:100vh;padding:16px}
+h1{letter-spacing:.4em;text-align:center;font-weight:400;margin:8px 0}
+#core{width:140px;height:140px;margin:10px auto;border-radius:50%;border:3px solid var(--c);box-shadow:0 0 30px var(--c),inset 0 0 30px var(--c);animation:spin 6s linear infinite;border-top-color:transparent}
+#core.on{animation-duration:1.2s;box-shadow:0 0 60px var(--c),inset 0 0 50px var(--c)}
+@keyframes spin{to{transform:rotate(360deg)}}
+#status{text-align:center;opacity:.8;margin-bottom:16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;max-width:1000px;margin:auto}
+.card{border:1px solid var(--c);background:var(--p);padding:14px;border-radius:6px;opacity:.25;transition:opacity 1s}
+body.awake .card{opacity:1}
+.card h2{margin:0 0 8px;font-size:14px;letter-spacing:.2em}
+.big{font-size:30px;color:#fff}
+.warn{color:#ffb300}
+button{background:none;border:1px solid var(--c);color:var(--c);padding:10px 18px;font:inherit;cursor:pointer;margin:6px}
+.ctr{text-align:center}
+small{opacity:.7}
+</style>
+</head>
+<body>
+<h1>J.A.R.V.I.S.</h1>
+<div id="core"></div>
+<div id="status">Standing by. Clap twice, then say: "Wake up, Daddy is home"</div>
+<div class="ctr">
+  <button id="arm">ARM LISTENER</button>
+  <button id="manual">RUN BRIEFING NOW</button>
+</div>
+
+<div class="grid">
+  <div class="card"><h2>USD / ZMW — BANK OF ZAMBIA</h2>
+    <div class="big" id="avg">K20.25</div>
+    <div>Buying <b id="buy">20.2219</b> · Selling <b id="sell">20.2719</b></div>
+    <small id="rdate">Average rate, 2 Nov 2026 15:30 hrs</small></div>
+
+  <div class="card"><h2>EMAIL — THIS WEEK</h2>
+    <div class="warn">Gmail needs re-authorising, so this week's emails could not be read.</div>
+    <small>Reconnect Gmail in your connector settings and re-run.</small></div>
+
+  <div class="card"><h2>CALENDAR</h2>
+    <div>No meetings or appointments in the next 7 days.</div>
+    <div>Fri 6 Nov — Karen's birthday (all day)</div></div>
+
+  <div class="card"><h2>PHOENIX TAYANT — AUGUST TAB</h2>
+    <div class="big">~330 <small>ledger lines (estimate)</small></div>
+    <div>Zambia ledger: revenue K48,387.56 · fees K650.90 · profit K47,736.66</div>
+    <div>Russia ledger: revenue ₽12,200.34</div></div>
+</div>
+
+<script>
+const BRIEFING =
+"Welcome home, sir. Systems online. Here is your briefing. " +
+"The Bank of Zambia's latest average rate has the dollar buying at 20.22 kwacha and selling at 20.27, an average of about 20.25 kwacha to the dollar. " +
+"My Gmail connection has expired, so I could not read this week's email. Please reconnect Gmail. " +
+"You have no meetings in the next seven days. Karen's birthday is this Friday, the sixth of November. " +
+"On the August tab of the Phoenix Tayant records there are roughly 330 ledger lines, an estimate. " +
+"The Zambia ledger shows a profit of 47,736 kwacha. That is all, sir.";
+
+const $=id=>document.getElementById(id), core=$('core'), st=$('status');
+let heard=false, claps=[], lastClap=0, awakeAt=0, ctx, analyser, rec;
+
+function speak(){
+  document.body.classList.add('awake'); core.classList.add('on');
+  st.textContent='Briefing in progress…';
+  speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(BRIEFING);
+  const v=speechSynthesis.getVoices().find(v=>/en-GB/.test(v.lang))||null; if(v)u.voice=v;
+  u.rate=.95; u.pitch=.9;
+  u.onend=()=>{core.classList.remove('on');st.textContent='Briefing complete.'};
+  speechSynthesis.speak(u);
+}
+function check(){ if(claps.length>=2 && heard) { claps=[];heard=false; speak(); } }
+
+async function arm(){
+  try{
+    const s=await navigator.mediaDevices.getUserMedia({audio:true});
+    ctx=new AudioContext(); const src=ctx.createMediaStreamSource(s);
+    analyser=ctx.createAnalyser(); analyser.fftSize=1024; src.connect(analyser);
+    const buf=new Uint8Array(analyser.fftSize);
+    (function loop(){
+      analyser.getByteTimeDomainData(buf);
+      let peak=0; for(const b of buf) peak=Math.max(peak,Math.abs(b-128));
+      const now=performance.now();
+      if(peak>110 && now-lastClap>200){ lastClap=now; claps=claps.filter(t=>now-t<1500); claps.push(now); st.textContent='Clap detected ×'+claps.length; check(); }
+      requestAnimationFrame(loop);
+    })();
+    const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+    if(SR){
+      rec=new SR(); rec.continuous=true; rec.interimResults=true; rec.lang='en-US';
+      rec.onresult=e=>{
+        const t=[...e.results].map(r=>r[0].transcript).join(' ').toLowerCase();
+        if(/wake up.*daddy.*home|daddy('s| is) home/.test(t)){ heard=true; rec.stop(); check(); }
+      };
+      rec.onend=()=>{ if(!document.body.classList.contains('awake')) try{rec.start()}catch(e){} };
+      rec.start();
+    }
+    st.textContent='Listening… clap twice and say the phrase.';
+  }catch(e){ st.textContent='Microphone blocked: '+e.message; }
+}
+$('arm').onclick=arm; $('manual').onclick=speak;
+speechSynthesis.getVoices();
+
+// Try to refresh live USD/ZMW from the Bank of Zambia (works if CORS allows)
+fetch('https://www.boz.zm/jsonapi/node/exchange_rates?include=field_average_exchange_rates&sort=-created&page[limit]=1')
+ .then(r=>r.json()).then(d=>{
+   const u=d.included.find(i=>i.attributes.currency==='USD').attributes;
+   $('buy').textContent=u.buying; $('sell').textContent=u.selling;
+   $('avg').textContent='K'+((+u.buying+ +u.selling)/2).toFixed(2);
+   $('rdate').textContent='Live: '+d.data[0].attributes.title;
+ }).catch(()=>{});
+</script>
+</body>
+</html>
