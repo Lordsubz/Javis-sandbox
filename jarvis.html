@@ -1,0 +1,120 @@
+<title>Jarvis Briefing</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: single-column HUD, central arc-reactor trigger, four briefing panels below */
+:root{--bg:#04101a;--panel:#08202f;--line:#14506b;--fg:#d8f4ff;--dim:#7fb1c4;--accent:#27d3ff;--warn:#ffb347;--bad:#ff6b6b;
+--display:"Chakra Petch",system-ui,sans-serif;--mono:"IBM Plex Mono",ui-monospace,monospace;color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--display);margin:0;padding-block:20px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));min-height:100vh}
+main{max-width:960px;margin:0 auto;display:grid;gap:20px}
+header{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:10px}
+h1{font-size:1.4rem;letter-spacing:.3em;margin:0;text-transform:uppercase}
+.sub{font-family:var(--mono);font-size:.75rem;color:var(--dim)}
+.core{display:grid;justify-items:center;gap:10px;padding:10px 0}
+#reactor{width:150px;height:150px;border-radius:50%;border:2px solid var(--accent);background:radial-gradient(circle,var(--accent) 0 10%,transparent 11% 100%),repeating-conic-gradient(var(--line) 0 10deg,transparent 10deg 30deg);color:var(--fg);cursor:pointer;box-shadow:0 0 24px #27d3ff55 inset,0 0 30px #27d3ff44;transition:box-shadow .3s}
+#reactor:focus-visible{outline:3px solid var(--warn);outline-offset:4px}
+body.live #reactor{animation:pulse 1.2s infinite alternate;box-shadow:0 0 50px #27d3ffaa inset,0 0 60px #27d3ff88}
+@keyframes pulse{to{transform:scale(1.05)}}
+@media (prefers-reduced-motion:reduce){body.live #reactor{animation:none}}
+#status{font-family:var(--mono);font-size:.85rem;color:var(--accent);text-align:center;min-height:1.4em}
+.btns{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+button.b{background:transparent;border:1px solid var(--accent);color:var(--accent);font-family:var(--mono);padding:8px 14px;cursor:pointer;font-size:.8rem}
+button.b:hover{background:#27d3ff22}
+button.b:focus-visible{outline:2px solid var(--warn)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:16px}
+section{background:var(--panel);border:1px solid var(--line);padding:16px;min-width:0}
+h2{margin:0 0 10px;font-size:.8rem;letter-spacing:.2em;text-transform:uppercase;color:var(--accent)}
+.big{font-family:var(--mono);font-size:2rem;font-variant-numeric:tabular-nums}
+.row{display:flex;justify-content:space-between;gap:8px;font-family:var(--mono);font-size:.85rem;color:var(--dim);font-variant-numeric:tabular-nums}
+p{margin:.4em 0;line-height:1.5}
+.tag{display:inline-block;font-family:var(--mono);font-size:.7rem;padding:2px 8px;border:1px solid var(--warn);color:var(--warn)}
+.tag.bad{border-color:var(--bad);color:var(--bad)}
+#script{font-size:.9rem;color:var(--dim);border-left:2px solid var(--line);padding-left:12px}
+</style>
+<main>
+<header><h1>J.A.R.V.I.S.</h1><span class="sub" id="stamp">Briefing data: 4 Nov 2026, 09:30 CAT</span></header>
+
+<div class="core">
+<button id="reactor" aria-label="Wake up Jarvis and read the briefing"></button>
+<div id="status" role="status">Standing by. Clap twice, then say "Wake up, Daddy is home".</div>
+<div class="btns">
+<button class="b" id="listen">Enable clap + voice trigger</button>
+<button class="b" id="wake">Wake up now</button>
+<button class="b" id="stop">Stop audio</button>
+</div>
+</div>
+
+<div class="grid">
+<section><h2>USD / ZMW · Bank of Zambia</h2>
+<div class="big">20.2770</div>
+<div class="row"><span>Buying</span><span>20.2520</span></div>
+<div class="row"><span>Selling</span><span>20.3020</span></div>
+<div class="row"><span>Mean since Mon 2 Nov (7 fixings)</span><span>20.2593</span></div>
+<p>Kwacha slightly weaker through the week: mid rate was 20.2432 on Monday morning.</p></section>
+
+<section><h2>Email · this week</h2>
+<span class="tag bad">NOT CHECKED</span>
+<p>The Gmail connection expired and needs you to sign in again. Reconnect Gmail in your claude.ai connector settings, then run this again for the weekly summary and the emails that need you.</p></section>
+
+<section><h2>Calendar</h2>
+<p><b>Fri 6 Nov</b>, all day: Karen's birthday.</p>
+<p class="sub">Nothing else in the next seven days.</p></section>
+
+<section><h2>Phoenix Tayant · August tab</h2>
+<div class="big">349</div>
+<div class="row"><span>Zambia ledger (kwacha)</span><span>341</span></div>
+<div class="row"><span>Russia ledger (rubles)</span><span>203</span></div>
+<div class="row"><span>Kwacha revenue / fees / profit</span><span>48,387.56 / 650.90 / 47,736.66</span></div>
+<p class="sub">Rows with a non-zero amount. One transaction can sit in both ledgers, and some rows are dated late October, so the true count may be lower.</p></section>
+</div>
+
+<p id="script"></p>
+</main>
+<script>
+var BRIEF=[
+"Welcome home, sir. Systems are online.",
+"Bank of Zambia. The mid rate for the US dollar is twenty point two seven seven kwacha. Buying at twenty point two five two, selling at twenty point three zero two. The average of this week's seven fixings is twenty point two five nine three, so the kwacha has softened slightly since Monday.",
+"Email. I could not reach your inbox, because the Gmail connection has expired. Please sign in again and I will summarise the week and flag what needs your attention.",
+"Calendar. You have no appointments in the next seven days. The only entry is Karen's birthday this Friday, the sixth of November.",
+"Tayant Pay. The August tab of the Phoenix transaction records holds three hundred and forty nine transaction rows. That is three hundred and forty one on the kwacha ledger and two hundred and three on the rouble ledger. Kwacha revenue is forty eight thousand three hundred and eighty eight, fees six hundred and fifty one, and profit forty seven thousand seven hundred and thirty seven.",
+"That concludes the briefing, sir."];
+var st=document.getElementById('status'),scr=document.getElementById('script'),running=false;
+function say(t){st.textContent=t}
+function pickVoice(){var v=speechSynthesis.getVoices();return v.find(function(x){return /en-GB/.test(x.lang)&&/male|daniel|google uk english male/i.test(x.name)})||v.find(function(x){return /^en/.test(x.lang)})}
+function speak(i){
+ if(!('speechSynthesis' in window)){say('This browser has no speech output. The briefing is on screen.');scr.textContent=BRIEF.join(' ');return}
+ if(i>=BRIEF.length){running=false;document.body.classList.remove('live');say('Briefing complete.');return}
+ var u=new SpeechSynthesisUtterance(BRIEF[i]);var v=pickVoice();if(v)u.voice=v;u.rate=.98;u.pitch=.8;
+ scr.textContent=BRIEF[i];
+ u.onend=function(){if(running)speak(i+1)};u.onerror=function(){running=false;document.body.classList.remove('live')};
+ speechSynthesis.speak(u)}
+function wake(){if(running)return;running=true;document.body.classList.add('live');say('Reading briefing...');speechSynthesis.cancel();speak(0)}
+document.getElementById('reactor').onclick=wake;
+document.getElementById('wake').onclick=wake;
+document.getElementById('stop').onclick=function(){running=false;speechSynthesis.cancel();document.body.classList.remove('live');say('Stopped.')};
+if('speechSynthesis' in window)speechSynthesis.onvoiceschanged=function(){};
+
+/* Clap + phrase trigger. Needs microphone access, which many embedded views refuse; the buttons above always work. */
+var armed=false;
+function startPhrase(){
+ var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+ if(!SR){say('Double clap heard, but this browser cannot hear the phrase. Use the Wake up button.');return}
+ var r=new SR();r.lang='en-US';r.interimResults=true;var done=false;
+ say('Clap detected. Say: "Wake up, Daddy is home"');
+ r.onresult=function(e){var t='';for(var i=e.resultIndex;i<e.results.length;i++)t+=e.results[i][0].transcript;
+  if(!done&&/wake\s*up.*daddy.*home/i.test(t)){done=true;r.stop();wake()}};
+ r.onend=function(){if(!done){armed=true;say('Standing by. Clap twice again.')}};
+ r.onerror=function(){armed=true};
+ try{r.start()}catch(e){armed=true}}
+document.getElementById('listen').onclick=function(){
+ if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){say('Microphone is not available here. Use the Wake up button, or open jarvis.html directly in Chrome.');return}
+ navigator.mediaDevices.getUserMedia({audio:true}).then(function(s){
+  var ctx=new(window.AudioContext||window.webkitAudioContext)(),src=ctx.createMediaStreamSource(s),an=ctx.createAnalyser();an.fftSize=1024;src.connect(an);
+  var buf=new Uint8Array(an.fftSize),claps=[],last=0;armed=true;say('Listening. Clap twice.');
+  (function loop(){var p=0;an.getByteTimeDomainData(buf);for(var i=0;i<buf.length;i++){var d=Math.abs(buf[i]-128)/128;if(d>p)p=d}
+   var now=performance.now();
+   if(armed&&p>.55&&now-last>180){last=now;claps=claps.filter(function(t){return now-t<1200});claps.push(now);
+    if(claps.length>=2){claps=[];armed=false;startPhrase()}}
+   requestAnimationFrame(loop)})()
+ }).catch(function(){say('Microphone blocked here. Use the Wake up button, or open jarvis.html directly in Chrome.')})};
+</script>
