@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>J.A.R.V.I.S. Dashboard</title>
+<style>
+:root{--c:#00d4ff;--bg:#02070d}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 50% 30%,#06223a,var(--bg));color:var(--c);font-family:"Courier New",monospace;min-height:100vh;padding:16px}
+h1{letter-spacing:.4em;text-align:center;font-weight:300}
+.reactor{width:140px;height:140px;margin:10px auto;border-radius:50%;border:3px solid var(--c);box-shadow:0 0 30px var(--c),inset 0 0 30px var(--c);display:grid;place-items:center;animation:p 3s infinite}
+.reactor.on{animation:p .8s infinite}@keyframes p{50%{box-shadow:0 0 60px var(--c),inset 0 0 50px var(--c)}}
+#status{text-align:center;opacity:.8;margin-bottom:16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;max-width:1000px;margin:auto}
+.card{border:1px solid var(--c);border-radius:8px;padding:14px;background:#0a1a2a99;box-shadow:0 0 12px #00d4ff55}
+.card h2{margin:0 0 8px;font-size:.9rem;letter-spacing:.2em}.card p{margin:4px 0;color:#bfefff}
+button{display:block;margin:16px auto;background:none;border:1px solid var(--c);color:var(--c);padding:10px 20px;font:inherit;cursor:pointer;border-radius:6px}
+audio{display:block;margin:12px auto;width:min(500px,100%)}
+</style></head><body>
+<h1>J.A.R.V.I.S.</h1>
+<div class="reactor" id="r"></div>
+<div id="status">Standing by. Clap twice, then say: "wake up, Daddy is home"</div>
+<button id="start">Enable microphone</button>
+<div class="grid">
+<div class="card"><h2>USD / ZMW</h2><p>Bank of Zambia: not retrieved</p><p>Market ref (31 Oct): ~18.98 ZMW per USD</p></div>
+<div class="card"><h2>EMAIL</h2><p>Gmail needs reconnecting.</p></div>
+<div class="card"><h2>CALENDAR</h2><p>No events in the next 30 days.</p></div>
+<div class="card"><h2>TAYANT PAY - AUGUST</h2><p>~99 ledger entries (3-31 Aug)</p><p>~90 Zambia / ~79 Russia ledger</p><p>Revenue K48,387.56, Fees K650.90, Profit K47,736.66</p></div>
+</div>
+<audio id="a" controls src="briefing.mp3"></audio>
+<script>
+const st=document.getElementById('status'),r=document.getElementById('r'),a=document.getElementById('a');
+let claps=[],armed=false;
+function brief(){r.classList.add('on');st.textContent='Welcome home, sir. Briefing...';a.play().catch(()=>{});a.onended=()=>r.classList.remove('on')}
+function listen(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){st.textContent='Speech recognition unsupported; use Chrome.';return}
+  const rec=new SR();rec.continuous=true;rec.lang='en-US';
+  rec.onresult=e=>{const t=[...e.results].map(x=>x[0].transcript).join(' ').toLowerCase();
+    if(armed&&/wake up.*(daddy|dad).*home/.test(t)){armed=false;brief()}};
+  rec.onend=()=>{try{rec.start()}catch(e){}};rec.start();
+}
+document.getElementById('start').onclick=async()=>{
+  const s=await navigator.mediaDevices.getUserMedia({audio:true});
+  const ctx=new AudioContext(),src=ctx.createMediaStreamSource(s),an=ctx.createAnalyser();an.fftSize=512;src.connect(an);
+  const buf=new Uint8Array(an.fftSize);let last=0;
+  (function tick(){an.getByteTimeDomainData(buf);let m=0;for(const v of buf)m=Math.max(m,Math.abs(v-128));
+    const now=performance.now();
+    if(m>90&&now-last>200){last=now;claps=claps.filter(t=>now-t<1200);claps.push(now);
+      if(claps.length>=2){claps=[];armed=true;st.textContent='Double clap detected. Say the phrase...';setTimeout(()=>armed=false,8000)}}
+    requestAnimationFrame(tick)})();
+  listen();st.textContent='Listening. Clap twice.';
+};
+</script></body></html>
