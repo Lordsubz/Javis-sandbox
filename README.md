@@ -35,7 +35,7 @@ from client-side JavaScript. Instead, `briefing.json` is meant to be
 regenerated periodically by a backend job (e.g. a scheduled Claude session,
 or a small script using the Gmail/Calendar/Drive APIs and a forex source)
 and dropped in place. The current file was populated from a real pull on
-2026-08-31.
+2026-11-11 (Gmail was unavailable on that run — its connector needed re-authorizing).
 
 ## What's simulated vs. real right now
 
