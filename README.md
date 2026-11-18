@@ -35,23 +35,21 @@ from client-side JavaScript. Instead, `briefing.json` is meant to be
 regenerated periodically by a backend job (e.g. a scheduled Claude session,
 or a small script using the Gmail/Calendar/Drive APIs and a forex source)
 and dropped in place. The current file was populated from a real pull on
-2026-08-31.
+2026-11-18.
 
 ## What's simulated vs. real right now
 
 - **Real, as of generation time:** the forex rate, email summary, calendar
   events, and Tayant Pay ledger totals in `data/briefing.json` all came from
-  live Gmail, Google Calendar, and Google Drive lookups, plus a web search
-  for the USD/ZMW rate (Bank of Zambia's own site is JS-rendered and
-  couldn't be scraped directly — see the `forex.source` field).
+  live Gmail, Google Calendar, and Google Drive lookups, plus the Bank of Zambia's own USD/ZMW daily fixing feed
+  (`https://www.boz.zm/api/v1/views/boz_zmw_usd_daily_exchange_rates`).
 - **Client-side, browser-only:** the clap detector (Web Audio API amplitude
   spikes) and the wake-phrase listener (`webkitSpeechRecognition`) run
   entirely in the browser. Voice **output** uses the browser's built-in
-  `speechSynthesis` API so the page works offline with no API key. A
-  higher-quality ElevenLabs narration of this same briefing was generated
-  separately and sent alongside this dashboard — wiring a real TTS API key
-  into the page itself was left out on purpose so nothing here silently
-  spends the user's API credits.
+  `speechSynthesis` API so the page works offline with no API key. When
+  `briefing.json` has an `audioUrl` (a pre-generated ElevenLabs narration in
+  `audio/`), the wake trigger plays that file instead and only falls back to
+  `speechSynthesis` if it can't play. No API key lives in the page.
 - **Not implemented:** an actual scheduler that refreshes `briefing.json`
   automatically. Wire that up with a cron job or a scheduled Claude Code
   session that re-runs the same four lookups and overwrites the file.
