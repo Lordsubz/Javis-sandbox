@@ -1,0 +1,209 @@
+<title>Javis Home Briefing</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<style>
+/* VOICE everyday, a personal heads-up display at home
+   IDEA a suit-style HUD that wakes on a double clap and a passphrase
+   PICTURE a large rotating arc reactor that pulses while Javis speaks
+   COLOUR night #05121c ground, cyan #3fd6ff lead, gold #ffb547 accent, red #ff5a5a for alerts
+   TYPE Rajdhani display + Inter text
+   LAYOUT laptop: reactor left, four panels in a 2x2 grid right; phone: reactor, then panels stacked */
+:root{color-scheme:dark;--bg:#05121c;--panel:#0a1f2e;--edge:#16425c;--ink:#dff6ff;--dim:#8fb6c8;--cy:#3fd6ff;--gold:#ffb547;--red:#ff6b6b}
+*{box-sizing:border-box;min-width:0}
+html,body{min-height:100%}
+body{margin:0;background:radial-gradient(ellipse at 30% 20%,#0b2a3d 0,var(--bg) 60%);color:var(--ink);font:16px/1.55 Inter,system-ui,sans-serif;overflow-x:clip}
+.wrap{max-width:1240px;margin:0 auto;padding-block:28px 48px;padding-left:max(5vw,16px,env(safe-area-inset-left,0px));padding-right:max(5vw,16px,env(safe-area-inset-right,0px))}
+h1{font:700 clamp(32px,5vw,48px)/1.05 Rajdhani,sans-serif;letter-spacing:-.01em;margin:0;color:var(--cy)}
+.sub{color:var(--dim);margin:4px 0 0}
+.top{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:end;gap:16px;margin-bottom:24px}
+.clock{font:700 clamp(28px,4vw,40px)/1 Rajdhani,sans-serif;color:var(--ink);white-space:nowrap;text-align:right}
+.clock small{display:block;font:500 15px Inter;color:var(--dim)}
+.grid{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:24px}
+.core{background:var(--panel);border:1px solid var(--edge);border-radius:14px;padding:20px;display:flex;flex-direction:column;align-items:center;gap:16px}
+.fig{position:relative;width:100%;aspect-ratio:1;max-width:420px}
+.fig svg{position:absolute;inset:0;width:100%;height:100%}
+.spin{transform-origin:200px 200px;animation:spin 18s linear infinite}
+.spin2{transform-origin:200px 200px;animation:spin 9s linear infinite reverse}
+body.speaking .pulse{animation:pulse .7s ease-in-out infinite alternate}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse{from{opacity:.55}to{opacity:1}}
+@media(prefers-reduced-motion:reduce){.spin,.spin2,body.speaking .pulse{animation:none}}
+.status{font:600 18px Rajdhani,sans-serif;color:var(--gold);text-align:center;min-height:1.6em}
+.heard{color:var(--dim);font-size:14px;text-align:center;min-height:1.4em}
+.btns{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
+button{font:600 16px Inter,sans-serif;min-height:44px;padding:0 20px;border-radius:22px;border:1px solid var(--cy);background:transparent;color:var(--cy);cursor:pointer}
+button.main{background:var(--cy);color:#04202e}
+button:hover{filter:brightness(1.15)}
+button:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+.panels{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.p{background:var(--panel);border:1px solid var(--edge);border-radius:14px;padding:18px}
+.p h2{font:700 22px/1.1 Rajdhani,sans-serif;margin:0 0 10px;color:var(--cy)}
+.big{font:700 clamp(40px,6vw,60px)/1 Rajdhani,sans-serif;color:var(--ink);white-space:nowrap}
+.chg{color:var(--gold);font-weight:600}
+.muted{color:var(--dim);font-size:14px}
+.alert{color:var(--red);font-weight:600}
+.spark{height:64px;margin:12px 0 6px}
+.spark svg{width:100%;height:100%}
+table{width:100%;border-collapse:collapse;font-size:15px}
+td{padding:6px 0;border-bottom:1px solid var(--edge)}
+td:last-child{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+a{color:var(--cy)}
+.script{margin-top:24px}
+.script details{background:var(--panel);border:1px solid var(--edge);border-radius:14px;padding:14px 18px}
+.script summary{cursor:pointer;font:700 18px Rajdhani,sans-serif;color:var(--cy)}
+@media(max-width:900px){.grid{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:600px){.panels{grid-template-columns:minmax(0,1fr)}.clock{text-align:left}}
+</style>
+
+<div class="wrap">
+  <div class="top">
+    <div><h1>Javis home briefing</h1><p class="sub">Clap twice, then say “Wake up, Daddy is home”.</p></div>
+    <div class="clock" id="clock">--:--<small id="date"></small></div>
+  </div>
+
+  <div class="grid">
+    <section class="core" aria-label="Javis core">
+      <div class="fig">
+        <svg viewBox="0 0 400 400" aria-hidden="true">
+          <defs><radialGradient id="g"><stop offset="0" stop-color="#e9fbff"/><stop offset=".35" stop-color="#3fd6ff"/><stop offset="1" stop-color="#3fd6ff" stop-opacity="0"/></radialGradient></defs>
+          <circle cx="200" cy="200" r="190" fill="none" stroke="#16425c" stroke-width="2"/>
+          <g class="spin"><circle cx="200" cy="200" r="170" fill="none" stroke="#3fd6ff" stroke-width="6" stroke-dasharray="60 22" opacity=".7"/></g>
+          <g class="spin2"><circle cx="200" cy="200" r="140" fill="none" stroke="#ffb547" stroke-width="3" stroke-dasharray="4 10"/></g>
+          <g class="spin" id="ticks"></g>
+          <circle cx="200" cy="200" r="110" fill="none" stroke="#3fd6ff" stroke-width="2" opacity=".5"/>
+          <circle class="pulse" cx="200" cy="200" r="95" fill="url(#g)" opacity=".7"/>
+          <circle cx="200" cy="200" r="38" fill="#e9fbff" class="pulse"/>
+        </svg>
+      </div>
+      <div class="status" id="status">Standing by</div>
+      <div class="heard" id="heard"></div>
+      <div class="btns">
+        <button class="main" id="listen">Start listening</button>
+        <button id="brief">Read briefing now</button>
+        <button id="stop" hidden>Stop</button>
+      </div>
+      <p class="muted" id="mode" style="text-align:center;margin:0"></p>
+    </section>
+
+    <div class="panels">
+      <section class="p" aria-label="Kwacha">
+        <h2>Kwacha vs dollar</h2>
+        <div class="big">K20.62</div>
+        <div><span class="chg">+1.9%</span> <span class="muted">weaker since 30 Oct (K20.23)</span></div>
+        <div class="spark" id="spark"></div>
+        <p class="muted" style="margin:0">Bank of Zambia average rate, 23 Nov 2026 (latest published). Market mid this morning: K20.77.</p>
+      </section>
+
+      <section class="p" aria-label="Email">
+        <h2>Email this week</h2>
+        <p class="alert" style="margin:0 0 6px">Couldn't check: Gmail needs you to sign in again.</p>
+        <p class="muted" style="margin:0">Reconnect Gmail in claude.ai connector settings and the next run will summarise this week's inbox and flag what needs you.</p>
+      </section>
+
+      <section class="p" aria-label="Calendar">
+        <h2>Calendar</h2>
+        <div class="big" style="font-size:44px">All clear</div>
+        <p class="muted" style="margin:6px 0 0">No events or appointments on your Google Calendar from 25 Nov to 9 Dec 2026.</p>
+      </section>
+
+      <section class="p" aria-label="Tayant Pay">
+        <h2>Tayant Pay, August tab</h2>
+        <div class="big">406</div>
+        <p class="muted" style="margin:0 0 8px">ledger entries processed</p>
+        <table>
+          <tr><td>Zambia in / out</td><td>137 / 261</td></tr>
+          <tr><td>Zambia value in</td><td>K467,647</td></tr>
+          <tr><td>Zambia value out</td><td>K430,306</td></tr>
+          <tr><td>Russia in / out</td><td>135 / 69</td></tr>
+          <tr><td>Revenue (Zambia)</td><td>K48,387.56</td></tr>
+          <tr><td>Fees</td><td>K650.90</td></tr>
+          <tr><td>Profit</td><td>K47,736.66</td></tr>
+          <tr><td>Revenue (Russia)</td><td>12,200.34 RUB</td></tr>
+        </table>
+        <p class="muted" style="margin:8px 0 0">The tab also holds entries dated September to November.</p>
+      </section>
+    </div>
+  </div>
+
+  <div class="script">
+    <details><summary>What Javis will say</summary><p id="scriptText"></p></details>
+  </div>
+</div>
+
+<script>
+{
+const rates=[["30 Oct",20.2276],["2 Nov",20.2469],["3 Nov",20.2658],["4 Nov",20.2804],["5 Nov",20.2937],["6 Nov",20.3106],["9 Nov",20.3426],["10 Nov",20.3798],["11 Nov",20.4023],["12 Nov",20.4248],["13 Nov",20.4435],["16 Nov",20.4723],["17 Nov",20.4915],["18 Nov",20.5356],["19 Nov",20.5613],["20 Nov",20.582],["23 Nov",20.6173]];
+const SCRIPT=["Welcome home, sir. Here is your briefing.",
+"Currency. The Bank of Zambia average rate is 20 point 6 2 kwacha to the US dollar, as of the twenty third of November. The kwacha has weakened about 1.9 percent since the end of October, when it was 20 point 2 3. The market rate this morning is around 20 point 7 7.",
+"Email. I could not check your inbox this time. Gmail needs you to sign in again in your connector settings.",
+"Calendar. Your calendar is clear. There are no events or appointments for the next two weeks.",
+"Tayant Pay. On the August tab of the Phoenix Tayant transaction records, Tayant Pay processed 406 ledger entries. On the Zambia ledger, 137 money in and 261 money out, about 467 thousand kwacha in and 430 thousand out. On the Russia ledger, 135 in and 69 out. Zambia revenue was 48 thousand 388 kwacha, with 651 kwacha in fees, giving a profit of 47 thousand 737 kwacha. Russia revenue was 12 thousand 200 rubles.",
+"That is all for now. Welcome home."];
+document.getElementById('scriptText').textContent=SCRIPT.join(' ');
+
+const ticks=document.getElementById('ticks');let t='';for(let i=0;i<48;i++){const a=i*7.5*Math.PI/180,r1=150,r2=i%4?156:164;t+=`<line x1="${200+r1*Math.cos(a)}" y1="${200+r1*Math.sin(a)}" x2="${200+r2*Math.cos(a)}" y2="${200+r2*Math.sin(a)}" stroke="#3fd6ff" stroke-width="2" opacity=".6"/>`}ticks.innerHTML=t;
+
+const sp=document.getElementById('spark');
+const draw=()=>{const W=sp.clientWidth,H=sp.clientHeight,p=6;const vs=rates.map(r=>r[1]),mn=Math.min(...vs),mx=Math.max(...vs);const x=i=>p+i*(W-2*p)/(vs.length-1),y=v=>H-p-(v-mn)/(mx-mn)*(H-2*p);const d=vs.map((v,i)=>(i?'L':'M')+x(i).toFixed(1)+' '+y(v).toFixed(1)).join('');sp.innerHTML=`<svg viewBox="0 0 ${W} ${H}"><path d="${d} L${x(vs.length-1)} ${H} L${x(0)} ${H}Z" fill="#3fd6ff" opacity=".12"/><path d="${d}" fill="none" stroke="#3fd6ff" stroke-width="2.5"/><circle cx="${x(vs.length-1)}" cy="${y(vs.at(-1))}" r="4" fill="#ffb547"/></svg>`};
+const ro=new ResizeObserver(draw);ro.observe(sp);
+
+const clock=document.getElementById('clock'),dateEl=document.getElementById('date');
+const tick=()=>{const n=new Date();clock.firstChild.nodeValue=n.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});dateEl.textContent=n.toLocaleDateString([], {weekday:'long',day:'numeric',month:'long'})};tick();setInterval(tick,15000);
+
+const statusEl=document.getElementById('status'),heard=document.getElementById('heard'),mode=document.getElementById('mode'),stopB=document.getElementById('stop'),listenB=document.getElementById('listen');
+const say=s=>statusEl.textContent=s;
+let tts=null,dict=null,speaking=false;
+const p1=window.claude?.use?window.claude.use('tts').then(x=>tts=x).catch(()=>{}):null;
+const p2=window.claude?.use?window.claude.use('dictation').then(x=>dict=x).catch(()=>{}):null;
+
+function setSpeaking(on){speaking=on;document.body.classList.toggle('speaking',on);stopB.hidden=!on}
+async function speakAll(){
+  say('Briefing in progress');setSpeaking(true);
+  try{
+    if(tts){await tts.speak(SCRIPT.map(text=>({text,voice:'glassy'})))}
+    else if('speechSynthesis' in window){await new Promise(res=>{speechSynthesis.cancel();SCRIPT.forEach((s,i)=>{const u=new SpeechSynthesisUtterance(s);u.rate=1;u.pitch=.9;if(i===SCRIPT.length-1)u.onend=res;speechSynthesis.speak(u)})})}
+    else{say('Audio unavailable here; the briefing is below')}
+  }catch(e){}
+  setSpeaking(false);say('Standing by');
+}
+function stopAll(){try{tts?.stop()}catch(e){}try{speechSynthesis.cancel()}catch(e){}setSpeaking(false);say('Standing by')}
+const PHRASE=/wake\s*up.*(daddy|dad).*home/i;
+function onWords(text){heard.textContent='“'+text+'”';if(PHRASE.test(text)&&!speaking){stopListening();speakAll()}}
+
+/* Local mode: real clap detection + browser speech recognition */
+let ac=null,stream=null,rec=null,claps=[],armedUntil=0,lastPeak=0;
+async function startLocal(){
+  stream=await navigator.mediaDevices.getUserMedia({audio:true});
+  ac=new AudioContext();const src=ac.createMediaStreamSource(stream),an=ac.createAnalyser();an.fftSize=1024;src.connect(an);
+  const buf=new Float32Array(an.fftSize);let floor=.02;
+  const loop=()=>{if(!ac)return;an.getFloatTimeDomainData(buf);let pk=0;for(const v of buf)pk=Math.max(pk,Math.abs(v));floor=floor*.98+pk*.02;const now=performance.now();
+    if(pk>.45&&pk>floor*5&&now-lastPeak>120){lastPeak=now;claps=claps.filter(c=>now-c<900);claps.push(now);if(claps.length>=2){claps=[];armedUntil=now+7000;say('Double clap heard. Say the phrase.');startRec()}}
+    if(armedUntil&&now>armedUntil){armedUntil=0;stopRec();say('Listening for two claps')}
+    requestAnimationFrame(loop)};loop();
+  say('Listening for two claps');mode.textContent='Microphone on: clap detection active.';
+}
+function startRec(){const R=window.SpeechRecognition||window.webkitSpeechRecognition;if(!R){say('Speech recognition not supported; briefing anyway');speakAll();return}
+  if(rec)return;rec=new R();rec.lang='en-US';rec.interimResults=true;rec.continuous=true;
+  rec.onresult=e=>{let s='';for(const r of e.results)s+=r[0].transcript;onWords(s)};rec.onend=()=>{rec=null};try{rec.start()}catch(e){}}
+function stopRec(){try{rec?.stop()}catch(e){}rec=null}
+
+/* Artifact mode: viewer dictation listens for the passphrase */
+let dictOn=false;
+function startDict(){
+  dict.onPartial(({text})=>onWords(text));dict.onFinal(({text})=>onWords(text));
+  dict.onState(({state})=>{dictOn=state==='listening';listenB.textContent=dictOn?'Listening…':'Start listening'});
+  return dict.start().then(()=>{say('Say “Wake up, Daddy is home”');mode.textContent='Clap detection needs the local copy; here Javis listens for the phrase.'})
+}
+function stopListening(){stopRec();if(dictOn){dict.stop().catch(()=>{})}}
+
+listenB.addEventListener('click',()=>{
+  if(navigator.mediaDevices?.getUserMedia&&!window.claude){startLocal().catch(()=>say('Microphone blocked. Use “Read briefing now”.'));return}
+  if(dict){startDict().catch(e=>say(e?.code==='not_granted'?'Dictation off. Use “Read briefing now”.':'Could not start listening'));return}
+  if(navigator.mediaDevices?.getUserMedia){startLocal().catch(()=>say('Microphone unavailable here. Use “Read briefing now”.'))}else say('Microphone unavailable here. Use “Read briefing now”.');
+});
+document.getElementById('brief').addEventListener('click',()=>{stopListening();speakAll()});
+stopB.addEventListener('click',stopAll);
+mode.textContent=window.claude?'':'Open in Chrome for clap detection.';
+}
+</script>
