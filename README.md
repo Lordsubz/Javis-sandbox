@@ -35,7 +35,8 @@ from client-side JavaScript. Instead, `briefing.json` is meant to be
 regenerated periodically by a backend job (e.g. a scheduled Claude session,
 or a small script using the Gmail/Calendar/Drive APIs and a forex source)
 and dropped in place. The current file was populated from a real pull on
-2026-08-31.
+2026-11-26 (Gmail was disconnected for that run, so the inbox panel shows a
+reconnect prompt instead of a summary).
 
 ## What's simulated vs. real right now
 
@@ -55,3 +56,11 @@ and dropped in place. The current file was populated from a real pull on
 - **Not implemented:** an actual scheduler that refreshes `briefing.json`
   automatically. Wire that up with a cron job or a scheduled Claude Code
   session that re-runs the same four lookups and overwrites the file.
+
+## Narration audio
+
+When the briefing plays, the page first tries `data/briefing.mp3` (a
+pre-recorded ElevenLabs narration). If that file isn't there, it falls back to
+the browser's built-in `speechSynthesis` voice. The 2026-11-26 refresh
+couldn't record a new mp3 because the ElevenLabs account was out of credits,
+so the browser voice reads the briefing for now.
